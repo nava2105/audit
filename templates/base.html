@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ISO 27001 Audit System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Audit System</a>
+        <div class="navbar-nav">
+            {% if 'username' in session %}
+                {% if session['role'] == 'user' %}
+                    <a class="nav-item nav-link" href="{{ url_for('upload') }}">Upload Documents</a>
+                    <a class="nav-item nav-link" href="{{ url_for('map_controls') }}">Map Controls</a>
+                {% elif session['role'] == 'auditor' %}
+                    <a class="nav-item nav-link" href="{{ url_for('audit') }}">Audit Controls</a>
+                {% endif %}
+                <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+            {% endif %}
+        </div>
+    </nav>
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
