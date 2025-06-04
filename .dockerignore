@@ -1,0 +1,8 @@
+*
+
+!/static
+!/templates
+!/templates/*
+!app.py
+!requirements.txt
+!/uploads
