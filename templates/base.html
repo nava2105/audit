@@ -1,22 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ISO 27001 Audit System</title>
+    <title>Audit System</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="/">Audit System</a>
-        <div class="navbar-nav">
-            {% if 'username' in session %}
-                {% if session['role'] == 'user' %}
-                    <a class="nav-item nav-link" href="{{ url_for('upload') }}">Upload Documents</a>
-                    <a class="nav-item nav-link" href="{{ url_for('map_controls') }}">Map Controls</a>
-                {% elif session['role'] == 'auditor' %}
-                    <a class="nav-item nav-link" href="{{ url_for('audit') }}">Audit Controls</a>
+        <a class="navbar-brand" href="/">Sistema de Auditoria</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                {% if 'username' in session %}
+                    {% if session['role'] == 'user' %}
+                        <a class="nav-item nav-link" href="{{ url_for('upload') }}">Cargar Documentos</a>
+                        <a class="nav-item nav-link" href="{{ url_for('map_controls') }}">Mapear Controles ISO</a>
+                            <a class="nav-link" href="{{ url_for('map_controls_ecuador') }}">Mapear LOPDP</a>
+                    {% elif session['role'] == 'auditor' %}
+                        <a class="nav-item nav-link" href="{{ url_for('audit') }}">Auditar Controles ISO</a>
+                        <a class="nav-item nav-link" href="{{ url_for('audit_ecuador') }}">Auditar Controles LOPDP</a>
+                    {% endif %}
+                    <a class="nav-item nav-link" href="{{ url_for('logout') }}">Cerrar Sesión</a>
                 {% endif %}
-                <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
-            {% endif %}
+            </ul>
         </div>
     </nav>
     <div class="container mt-4">
@@ -31,3 +35,18 @@
     </div>
 </body>
 </html>
+<div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav">
+        {% if 'username' in session %}
+            {% if session['role'] == 'user' %}
+                <a class="nav-item nav-link" href="{{ url_for('upload') }}">Cargar Documentos</a>
+                <a class="nav-item nav-link" href="{{ url_for('map_controls') }}">Mapear Controles ISO</a>
+                <a class="nav-link" href="{{ url_for('map_controls_ecuador') }}">Mapear LOPDP</a>
+            {% elif session['role'] == 'auditor' %}
+                <a class="nav-item nav-link" href="{{ url_for('audit') }}">Auditar Controles ISO</a>
+                <a class="nav-item nav-link" href="{{ url_for('audit_ecuador') }}">Auditar Controles LOPDP</a>
+            {% endif %}
+            <a class="nav-item nav-link" href="{{ url_for('logout') }}">Cerrar Sesión</a>
+        {% endif %}
+    </ul>
+</div>

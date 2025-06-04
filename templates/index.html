@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Welcome to ISO 27001 Audit System</h2>
+<h2>Sistema de Auditoría ISO 27001 y LOPDP</h2>
 {% if role == 'user' %}
-    <p>As a user, you can:</p>
+    <p>Como usuario, puedes:</p>
     <ul>
-        <li>Upload PDF documents</li>
-        <li>Map documents to ISO 27001 controls</li>
+        <li>Cargar documentos PDF</li>
+        <li>Asignar documentos a los controles de la norma ISO 27001 o a la LOPDP</li>
     </ul>
 {% elif role == 'auditor' %}
-    <p>As an auditor, you can:</p>
+    <p>Como auditor, puedes:</p>
     <ul>
-        <li>Review mapped controls</li>
-        <li>Evaluate compliance</li>
-        <li>Add comments and scores</li>
+        <li>Revisar los controles asignados</li>
+        <li>Evaluar el cumplimiento</li>
+        <li>Añadir comentarios y puntuaciones</li>
     </ul>
 {% endif %}
 {% endblock %}
