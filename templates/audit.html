@@ -2,6 +2,7 @@
 {% block content %}
 <h2>Auditoria Controles ISO 27001</h2>
 <a href="{{ url_for('generate_report', audit_type='iso') }}" class="btn btn-success mb-3" target="_blank">Generar Reporte PDF</a>
+<a href="{{ url_for('generate_heatmap', audit_type='iso') }}" class="btn btn-info mb-3" target="_blank">Ver Heatmap</a>
 {% for control, data in controls.items() %}
     <div class="card mb-4">
         <div class="card-header">

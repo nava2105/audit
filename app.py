@@ -7,6 +7,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
+import plotly
 import plotly.graph_objects as go
 
 app = Flask(__name__)
@@ -1066,6 +1067,115 @@ def generate_report(audit_type):
     except Exception as e:
         flash(f'Error al generar el reporte: {e}', 'danger')
         return redirect(url_for('index'))
+
+@app.route('/heatmap/<audit_type>')
+def generate_heatmap(audit_type):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    db = load_db()
+    scores = []
+    control_labels = []
+    category_labels = []
+
+    if audit_type == 'iso':
+        all_controls = ISO_CONTROLS
+        db_controls = db.get('controls', {})
+        for chapter, chapter_data in all_controls.items():
+            category_labels.append(chapter)
+            for control_id, control_details in chapter_data['controls'].items():
+                for subcontrol_id, subcontrol_title in control_details['subcontrols'].items():
+                    full_control_id = subcontrol_id
+                    score = db_controls.get(full_control_id, {}).get('score', 0)
+                    scores.append(score)
+                    control_labels.append(full_control_id)
+
+    elif audit_type == 'ecuador':
+        all_controls = ECUADOR_LAW_CONTROLS
+        db_controls = db.get('ecuador_controls', {})
+        for chapter, chapter_data in all_controls.items():
+            category_labels.append(chapter)
+            for control_id, control_details in chapter_data['controls'].items():
+                full_control_id = f"{chapter}_{control_id}"
+                score = db_controls.get(full_control_id, {}).get('score', 0)
+                scores.append(score)
+                control_labels.append(full_control_id)
+    else:
+        flash('Tipo de auditoría no válido.', 'danger')
+        return redirect(url_for('index'))
+
+    # Create heatmap data
+    # For simplicity, let's assume a single row heatmap for now, or reshape if needed
+    # This part might need adjustment based on how you want to visualize categories vs controls
+    # For a simple heatmap of all scores, we can just use a single row/column
+    if not scores:
+        flash('No hay datos de auditoría para generar el diagrama de calor.', 'warning')
+        return redirect(url_for('index'))
+
+    # Reshape scores into a 2D array for heatmap if needed, for now, a simple list
+    # For a more complex heatmap with categories on one axis and controls on another,
+    # you'd need to build a proper Z matrix.
+    # For now, let's just plot all scores as a single row/column heatmap.
+    # A better approach would be to group scores by chapter/category.
+
+    # Example: Simple heatmap where each control is a 'column' and score is the 'value'
+    # This will create a single row heatmap if category_labels is just one item or not used as Y-axis
+    # Let's try to make a more structured heatmap if possible.
+
+    # To create a meaningful heatmap, we need a 2D array (Z values)
+    # Let's try to map scores back to a grid based on chapters and controls
+    z_scores = []
+    x_labels = [] # Controls
+    y_labels = [] # Chapters
+
+    if audit_type == 'iso':
+        for chapter, chapter_data in all_controls.items():
+            row_scores = []
+            y_labels.append(chapter)
+            for control_id, control_details in chapter_data['controls'].items():
+                for subcontrol_id, subcontrol_title in control_details['subcontrols'].items():
+                    full_control_id = subcontrol_id
+                    score = db_controls.get(full_control_id, {}).get('score', 0)
+                    row_scores.append(score)
+                    if full_control_id not in x_labels: # Ensure unique x-labels
+                        x_labels.append(full_control_id)
+            z_scores.append(row_scores)
+
+    elif audit_type == 'ecuador':
+        for chapter, chapter_data in all_controls.items():
+            row_scores = []
+            y_labels.append(chapter)
+            for control_id, control_details in chapter_data['controls'].items():
+                full_control_id = f"{chapter}_{control_id}"
+                score = db_controls.get(full_control_id, {}).get('score', 0)
+                row_scores.append(score)
+                if full_control_id not in x_labels: # Ensure unique x-labels
+                    x_labels.append(full_control_id)
+            z_scores.append(row_scores)
+
+    # Ensure all rows in z_scores have the same length for heatmap
+    # This is a common issue if controls per chapter vary. Pad with None or 0.
+    max_len = max(len(row) for row in z_scores) if z_scores else 0
+    for row in z_scores:
+        while len(row) < max_len:
+            row.append(None) # Or 0, depending on how you want to represent missing data
+
+    fig = go.Figure(data=go.Heatmap(
+        z=z_scores,
+        x=x_labels,
+        y=y_labels,
+        colorscale='Viridis'))
+
+    fig.update_layout(
+        title=f'Diagrama de Calor de Calificaciones de Auditoría - {audit_type.upper()}',
+        xaxis_title='Controles',
+        yaxis_title='Capítulos',
+        xaxis_nticks=36 # Adjust as needed for readability
+    )
+
+    graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+    return render_template('heatmap.html', graph_json=graph_json)
 
 if __name__ == '__main__':
     app.run(debug=True)
