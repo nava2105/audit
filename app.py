@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
 import os
 import json
 from werkzeug.utils import secure_filename
@@ -808,7 +808,7 @@ USERS = {
 def index():
     if 'username' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html', role=session.get('role'))
+    return render_template('index.html', role=session.get('role'), os=os)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1176,6 +1176,10 @@ def generate_heatmap(audit_type):
     graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
     return render_template('heatmap.html', graph_json=graph_json)
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True)

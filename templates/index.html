@@ -14,5 +14,13 @@
         <li>Evaluar el cumplimiento</li>
         <li>Añadir comentarios y puntuaciones</li>
     </ul>
+    <h3>Archivos subidos por el usuario:</h3>
+    <ul>
+    {% for file in os.listdir('uploads') %}
+        <li><a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a></li>
+    {% else %}
+        <li>No hay archivos subidos.</li>
+    {% endfor %}
+    </ul>
 {% endif %}
 {% endblock %}
