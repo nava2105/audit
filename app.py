@@ -916,7 +916,7 @@ def audit():
 
 @app.route('/map_controls_ecuador', methods=['GET', 'POST'])
 def map_controls_ecuador():
-    if 'username' not in session:
+    if 'username' not in session or session['role'] != 'user':
         return redirect(url_for('login'))
 
     db = load_db()
@@ -925,14 +925,15 @@ def map_controls_ecuador():
         save_db(db)
 
     if request.method == 'POST':
-        control = request.form['control']
+        # Asegúrate de que 'control' en el formulario ya viene con el formato CAP.X_Art.Y
+        control_key = request.form['control']
         documents = request.form.getlist('documents')
 
-        if control not in db['ecuador_controls']:
-            db['ecuador_controls'][control] = {}
+        if control_key not in db['ecuador_controls']:
+            db['ecuador_controls'][control_key] = {}
 
-        db['ecuador_controls'][control]['documents'] = documents
-        db['ecuador_controls'][control]['status'] = 'Mapeado'
+        db['ecuador_controls'][control_key]['documents'] = documents
+        db['ecuador_controls'][control_key]['status'] = 'Mapeado'
 
         save_db(db)
         flash('Documentos mapeados exitosamente', 'success')
@@ -970,20 +971,23 @@ def audit_ecuador():
         save_db(db)
         flash('Evaluación guardada exitosamente', 'success')
 
-    controls = {}
+    mapped_controls_data = {}
     for chapter, chapter_data in ECUADOR_LAW_CONTROLS.items():
-        for control_id, control_data in chapter_data['controls'].items():
+        for control_id, control_details in chapter_data['controls'].items():
             full_control_id = f"{chapter}_{control_id}"
-            controls[full_control_id] = {
-                'title': control_data['title'],
-                'content': control_data['content'],
-                'documents': db['ecuador_controls'].get(full_control_id, {}).get('documents', []),
-                'score': db['ecuador_controls'].get(full_control_id, {}).get('score', 0),
-                'comment': db['ecuador_controls'].get(full_control_id, {}).get('comment', ''),
-                'status': db['ecuador_controls'].get(full_control_id, {}).get('status', 'Pendiente')
-            }
 
-    return render_template('audit_ecuador.html', controls=controls)
+            # Solo incluir el control si está mapeado (existe en db['ecuador_controls'] y tiene documentos)
+            if full_control_id in db['ecuador_controls'] and db['ecuador_controls'][full_control_id].get('documents'):
+                mapped_controls_data[full_control_id] = {
+                    'title': control_details['title'],
+                    'content': control_details['content'],
+                    'documents': db['ecuador_controls'][full_control_id].get('documents', []),
+                    'score': db['ecuador_controls'][full_control_id].get('score', 0),
+                    'comment': db['ecuador_controls'][full_control_id].get('comment', ''),
+                    'status': db['ecuador_controls'][full_control_id].get('status', 'Pendiente')
+                }
+
+    return render_template('audit_ecuador.html', controls=mapped_controls_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
