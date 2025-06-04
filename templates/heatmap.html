@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Diagrama de Calor de Calificaciones de Auditoría</h2>
+<div id="heatmap-graph"></div>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="text/javascript">
+    var graph = {{ graph_json | safe }};
+    Plotly.newPlot('heatmap-graph', graph.data, graph.layout);
+</script>
+{% endblock %}
