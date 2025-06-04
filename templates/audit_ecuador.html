@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Auditoría Controles Ley de Protección de Datos del Ecuador</h2>
+<a href="{{ url_for('generate_report', audit_type='ecuador') }}" class="btn btn-success mb-3" target="_blank">Generar Reporte PDF</a>
 {% for control_id, data in controls.items() %}
     <div class="card mb-4">
         <div class="card-header">

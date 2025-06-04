@@ -989,5 +989,83 @@ def audit_ecuador():
 
     return render_template('audit_ecuador.html', controls=mapped_controls_data)
 
+@app.route('/generate_report/<audit_type>')
+def generate_report(audit_type):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    db = load_db()
+    doc = SimpleDocTemplate(f"static/{audit_type}_audit_report.pdf", pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph(f"Reporte de Auditoría - {audit_type.upper()}", styles['h1']))
+    elements.append(Spacer(1, 0.25 * inch))
+
+    if audit_type == 'iso':
+        all_controls = ISO_CONTROLS
+        db_controls = db.get('controls', {})
+    elif audit_type == 'ecuador':
+        all_controls = ECUADOR_LAW_CONTROLS
+        db_controls = db.get('ecuador_controls', {})
+    else:
+        flash('Tipo de auditoría no válido.', 'danger')
+        return redirect(url_for('index'))
+
+    data = [['Control', 'Título', 'Puntuación', 'Estado', 'Comentario', 'Documentos Relacionados']]
+
+    if audit_type == 'iso':
+        for chapter, chapter_data in all_controls.items():
+            for control_id, control_details in chapter_data['controls'].items():
+                for subcontrol_id, subcontrol_title in control_details['subcontrols'].items():
+                    full_control_id = subcontrol_id
+                    control_data = db_controls.get(full_control_id, {})
+                    score = control_data.get('score', 0)
+                    comment = control_data.get('comment', '')
+                    documents = ', '.join(control_data.get('documents', []))
+                    status = control_data.get('status', 'Incumplimiento')
+
+                    data.append([full_control_id, subcontrol_title, str(score), status, comment, documents])
+    elif audit_type == 'ecuador':
+        for chapter, chapter_data in all_controls.items():
+            for control_id, control_details in chapter_data['controls'].items():
+                full_control_id = f"{chapter}_{control_id}"
+                control_data = db_controls.get(full_control_id, {})
+                score = control_data.get('score', 0)
+                comment = control_data.get('comment', '')
+                documents = ', '.join(control_data.get('documents', []))
+                status = control_data.get('status', 'Incumplimiento')
+
+                data.append([full_control_id, control_details['title'], str(score), status, comment, documents])
+
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BOX', (0, 0), (-1, -1), 1, colors.black),
+        ('WORDWRAP', (4, 1), (4, -1), True), # Ajustar comentario
+        ('ALIGN', (4, 1), (4, -1), 'LEFT'), # Alinear comentario a la izquierda
+    ]))
+
+    # Ajustar ancho de columnas (aproximado)
+    col_widths = [1.2*inch, 1.5*inch, 0.8*inch, 1.2*inch, 2.5*inch, 1.5*inch]
+    table._argW = col_widths
+
+    elements.append(table)
+
+    try:
+        doc.build(elements)
+        flash('Reporte generado exitosamente.', 'success')
+        return redirect(url_for('static', filename=f'{audit_type}_audit_report.pdf'))
+    except Exception as e:
+        flash(f'Error al generar el reporte: {e}', 'danger')
+        return redirect(url_for('index'))
+
 if __name__ == '__main__':
     app.run(debug=True)
